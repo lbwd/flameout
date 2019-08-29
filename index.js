@@ -1,6 +1,6 @@
-"use strict";
+'use strict';
 
-const glsl = require('glslify')
+const glsl = require('glslify');
 
 // Grab the canvas and size it.
 const canvas = document.getElementById('render-canvas');
@@ -10,7 +10,7 @@ canvas.height = canvas.clientHeight;
 // Create our regl object.
 const regl = require('regl')({
   canvas: canvas,
-  extensions: ['OES_texture_float'],
+  extensions: ['OES_texture_float']
 });
 
 // Make a set of ping-pong buffers.
@@ -19,14 +19,14 @@ const pingPong = [
     width: canvas.width,
     height: canvas.height,
     colorFormat: 'rgba',
-    colorType: 'float',
+    colorType: 'float'
   }),
   regl.framebuffer({
     width: canvas.width,
     height: canvas.height,
     colorFormat: 'rgba',
-    colorType: 'float',
-  }),
+    colorType: 'float'
+  })
 ];
 
 // Make the paper.
@@ -68,24 +68,15 @@ regl({
       gl_FragColor = vec4(n, t, n, 0);
     }`,
   attributes: {
-    position: [
-      -1, -1,
-       1, -1,
-       1,  1,
-      -1, -1,
-       1,  1,
-      -1,  1
-    ],
+    position: [-1, -1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1]
   },
   uniforms: {
-    offset: [2 * Math.random() - 1, 2 * Math.random() - 1],
+    offset: [2 * Math.random() - 1, 2 * Math.random() - 1]
   },
-  viewport: {x: 0, y: 0, width: canvas.width, height: canvas.height},
+  viewport: { x: 0, y: 0, width: canvas.width, height: canvas.height },
   framebuffer: pingPong[0],
-  count: 6,
+  count: 6
 })();
-
-
 
 const cmdBurn = regl({
   vert: `
@@ -100,6 +91,9 @@ const cmdBurn = regl({
     uniform sampler2D source;
     uniform vec2 resolution;
     uniform vec2 spark;
+    uniform vec2 spark1;
+    uniform vec2 spark2;
+    uniform vec2 spark3;
 
     vec2 dr = 1.0/resolution;
     const float burnTemp = 506.0;
@@ -129,9 +123,21 @@ const cmdBurn = regl({
         float d = distance(gl_FragCoord.xy, spark*resolution);
         t += pow(m0.z, 0.25) * 64.0*exp(-0.04 * d);
       }
+      if (spark1.x >= 0.0) {
+        float d = distance(gl_FragCoord.xy, spark1*resolution);
+        t += pow(m0.z, 0.25) * 64.0*exp(-0.04 * d);
+      }
+      if (spark2.x >= 0.0) {
+        float d = distance(gl_FragCoord.xy, spark2*resolution);
+        t += pow(m0.z, 0.25) * 64.0*exp(-0.04 * d);
+      }
+      if (spark3.x >= 0.0) {
+        float d = distance(gl_FragCoord.xy, spark3*resolution);
+        t += pow(m0.z, 0.25) * 64.0*exp(-0.04 * d);
+      }
 
       // Add temperature from neighboring pixels
-      t += 0.02 * m0.z * tn;
+      t += 0.9 * m0.z * tn;
 
       // Current fuel
       float n = m0.x;
@@ -145,29 +151,25 @@ const cmdBurn = regl({
       // Shut it down when out of fuel.
       if (n < 0.001) {
         t = 0.0;
-        n = 0.0;
+        n = 0.0001;
       }
 
       gl_FragColor = vec4(n, t, m0.z, 1);
     }`,
   attributes: {
-    position: [
-      -1, -1,
-       1, -1,
-       1,  1,
-      -1, -1,
-       1,  1,
-      -1,  1
-    ],
+    position: [-1, -1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1]
   },
   uniforms: {
     resolution: regl.prop('resolution'),
     source: regl.prop('source'),
     spark: regl.prop('spark'),
+    spark1: regl.prop('spark1'),
+    spark2: regl.prop('spark2'),
+    spark3: regl.prop('spark3')
   },
   framebuffer: regl.prop('destination'),
   viewport: regl.prop('viewport'),
-  count: 6,
+  count: 6
 });
 
 // Render the current state.
@@ -205,15 +207,15 @@ const cmdFlame = regl({
       vec4 c = vec4(0);
       if (n == m0.z) {
         if (t < brownTemp) {
-          c = mix(vec4(white * 0.8, 1), vec4(brown, 1), stretch(t, 0.0, brownTemp));
+          c = mix(vec4(white, 1), vec4(brown, 1), stretch(t, 0.0, brownTemp));
         } else if (t < burnTemp) {
-          c = mix(vec4(brown, 1), vec4(black, 1), stretch(t, brownTemp, burnTemp));
+          c = mix(vec4(brown, 1), vec4(black, 0), stretch(t, brownTemp, burnTemp));
         }
       } else {
         if (t < burnTemp) {
-          c = vec4(black, 1);
+          c = vec4(black, 0);
         } else if (t >= burnTemp && t < redTemp) {
-          c = mix(vec4(black, 1), vec4(red, 1), stretch(t, burnTemp, redTemp));
+          c = mix(vec4(black, 0), vec4(red, 1), stretch(t, burnTemp, redTemp));
         } else if (t >= redTemp) {
           c = mix(vec4(red,1), vec4(white,1), stretch(t, redTemp, maxTemp));
         }
@@ -221,60 +223,67 @@ const cmdFlame = regl({
       gl_FragColor = c;
     }`,
   attributes: {
-    position: [
-      -1, -1,
-       1, -1,
-       1,  1,
-      -1, -1,
-       1,  1,
-      -1,  1
-    ],
+    position: [-1, -1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1]
   },
   uniforms: {
     resolution: regl.prop('resolution'),
-    source: regl.prop('source'),
+    source: regl.prop('source')
   },
   viewport: regl.prop('viewport'),
-  count: 6,
+  count: 6
 });
 
 const mouse = {
   down: false,
   x: 0,
-  y: 0,
-}
+  y: 0
+};
 
 window.addEventListener('mousedown', function(e) {
   mouse.down = true;
-  mouse.x = e.clientX / window.innerWidth;
-  mouse.y = (window.innerHeight - e.clientY) / window.innerHeight;
 });
 
-window.addEventListener('mouseup', function(e) {
-  mouse.down = false;
+window.addEventListener('touchstart', function(e) {
+  mouse.down = true;
 });
-
-window.addEventListener('mousemove', function(e) {
-  mouse.x = e.clientX / window.innerWidth;
-  mouse.y = (window.innerHeight - e.clientY) / window.innerHeight;
-})
 
 let pingPongIndex = 0;
 
-function loop() {
+const points = [];
 
+points.push({
+  x: Math.random(),
+  y: Math.random()
+});
+points.push({
+  x: Math.random(),
+  y: Math.random()
+});
+points.push({
+  x: Math.random(),
+  y: Math.random()
+});
+points.push({
+  x: Math.random(),
+  y: Math.random()
+});
+
+function loop() {
   for (let i = 0; i < 1; i++) {
     regl.clear({
       depth: 1,
-      framebuffer: pingPong[1 - pingPongIndex],
+      framebuffer: pingPong[1 - pingPongIndex]
     });
-
+  
     cmdBurn({
       source: pingPong[pingPongIndex],
       destination: pingPong[1 - pingPongIndex],
-      spark: mouse.down ? [mouse.x, mouse.y] : [-10000, -10000],
+      spark: mouse.down ? [points[0].x, points[0].y] : [-10000, -10000],
+      spark1: mouse.down ? [points[1].x, points[1].y] : [-10000, -10000],
+      spark2: mouse.down ? [points[2].x, points[2].y] : [-10000, -10000],
+      spark3: mouse.down ? [points[3].x, points[3].y] : [-10000, -10000],
       resolution: [canvas.width, canvas.height],
-      viewport: {x: 0, y: 0, width: canvas.width, height: canvas.height},
+      viewport: { x: 0, y: 0, width: canvas.width, height: canvas.height }
     });
 
     pingPongIndex = 1 - pingPongIndex;
@@ -283,9 +292,8 @@ function loop() {
   cmdFlame({
     source: pingPong[pingPongIndex],
     resolution: [canvas.width, canvas.height],
-    viewport: {x: 0, y: 0, width: canvas.width, height: canvas.height},
+    viewport: { x: 0, y: 0, width: canvas.width, height: canvas.height }
   });
-
 
   requestAnimationFrame(loop);
 }
