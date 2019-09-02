@@ -1,7 +1,7 @@
 (function(){function r(e,n,t){function o(i,f){if(!n[i]){if(!e[i]){var c="function"==typeof require&&require;if(!f&&c)return c(i,!0);if(u)return u(i,!0);var a=new Error("Cannot find module '"+i+"'");throw a.code="MODULE_NOT_FOUND",a}var p=n[i]={exports:{}};e[i][0].call(p.exports,function(r){var n=e[i][1][r];return o(n||r)},p,p.exports,r,e,n,t)}return n[i].exports}for(var u="function"==typeof require&&require,i=0;i<t.length;i++)o(t[i]);return o}return r})()({1:[function(require,module,exports){
-"use strict";
+'use strict';
 
-const glsl = require('glslify')
+const glsl = require('glslify');
 
 // Grab the canvas and size it.
 const canvas = document.getElementById('render-canvas');
@@ -11,7 +11,7 @@ canvas.height = canvas.clientHeight;
 // Create our regl object.
 const regl = require('regl')({
   canvas: canvas,
-  extensions: ['OES_texture_float'],
+  extensions: ['OES_texture_float']
 });
 
 // Make a set of ping-pong buffers.
@@ -20,14 +20,14 @@ const pingPong = [
     width: canvas.width,
     height: canvas.height,
     colorFormat: 'rgba',
-    colorType: 'float',
+    colorType: 'float'
   }),
   regl.framebuffer({
     width: canvas.width,
     height: canvas.height,
     colorFormat: 'rgba',
-    colorType: 'float',
-  }),
+    colorType: 'float'
+  })
 ];
 
 // Make the paper.
@@ -43,24 +43,15 @@ regl({
 
   frag: glsl(["\n    precision highp float;\n#define GLSLIFY 1\n\n    varying vec2 vPos;\n    uniform vec2 offset;\n\n    //\n// GLSL textureless classic 3D noise \"cnoise\",\n// with an RSL-style periodic variant \"pnoise\".\n// Author:  Stefan Gustavson (stefan.gustavson@liu.se)\n// Version: 2011-10-11\n//\n// Many thanks to Ian McEwan of Ashima Arts for the\n// ideas for permutation and gradient selection.\n//\n// Copyright (c) 2011 Stefan Gustavson. All rights reserved.\n// Distributed under the MIT license. See LICENSE file.\n// https://github.com/ashima/webgl-noise\n//\n\nvec3 mod289(vec3 x)\n{\n  return x - floor(x * (1.0 / 289.0)) * 289.0;\n}\n\nvec4 mod289(vec4 x)\n{\n  return x - floor(x * (1.0 / 289.0)) * 289.0;\n}\n\nvec4 permute(vec4 x)\n{\n  return mod289(((x*34.0)+1.0)*x);\n}\n\nvec4 taylorInvSqrt(vec4 r)\n{\n  return 1.79284291400159 - 0.85373472095314 * r;\n}\n\nvec3 fade(vec3 t) {\n  return t*t*t*(t*(t*6.0-15.0)+10.0);\n}\n\n// Classic Perlin noise\nfloat cnoise(vec3 P)\n{\n  vec3 Pi0 = floor(P); // Integer part for indexing\n  vec3 Pi1 = Pi0 + vec3(1.0); // Integer part + 1\n  Pi0 = mod289(Pi0);\n  Pi1 = mod289(Pi1);\n  vec3 Pf0 = fract(P); // Fractional part for interpolation\n  vec3 Pf1 = Pf0 - vec3(1.0); // Fractional part - 1.0\n  vec4 ix = vec4(Pi0.x, Pi1.x, Pi0.x, Pi1.x);\n  vec4 iy = vec4(Pi0.yy, Pi1.yy);\n  vec4 iz0 = Pi0.zzzz;\n  vec4 iz1 = Pi1.zzzz;\n\n  vec4 ixy = permute(permute(ix) + iy);\n  vec4 ixy0 = permute(ixy + iz0);\n  vec4 ixy1 = permute(ixy + iz1);\n\n  vec4 gx0 = ixy0 * (1.0 / 7.0);\n  vec4 gy0 = fract(floor(gx0) * (1.0 / 7.0)) - 0.5;\n  gx0 = fract(gx0);\n  vec4 gz0 = vec4(0.5) - abs(gx0) - abs(gy0);\n  vec4 sz0 = step(gz0, vec4(0.0));\n  gx0 -= sz0 * (step(0.0, gx0) - 0.5);\n  gy0 -= sz0 * (step(0.0, gy0) - 0.5);\n\n  vec4 gx1 = ixy1 * (1.0 / 7.0);\n  vec4 gy1 = fract(floor(gx1) * (1.0 / 7.0)) - 0.5;\n  gx1 = fract(gx1);\n  vec4 gz1 = vec4(0.5) - abs(gx1) - abs(gy1);\n  vec4 sz1 = step(gz1, vec4(0.0));\n  gx1 -= sz1 * (step(0.0, gx1) - 0.5);\n  gy1 -= sz1 * (step(0.0, gy1) - 0.5);\n\n  vec3 g000 = vec3(gx0.x,gy0.x,gz0.x);\n  vec3 g100 = vec3(gx0.y,gy0.y,gz0.y);\n  vec3 g010 = vec3(gx0.z,gy0.z,gz0.z);\n  vec3 g110 = vec3(gx0.w,gy0.w,gz0.w);\n  vec3 g001 = vec3(gx1.x,gy1.x,gz1.x);\n  vec3 g101 = vec3(gx1.y,gy1.y,gz1.y);\n  vec3 g011 = vec3(gx1.z,gy1.z,gz1.z);\n  vec3 g111 = vec3(gx1.w,gy1.w,gz1.w);\n\n  vec4 norm0 = taylorInvSqrt(vec4(dot(g000, g000), dot(g010, g010), dot(g100, g100), dot(g110, g110)));\n  g000 *= norm0.x;\n  g010 *= norm0.y;\n  g100 *= norm0.z;\n  g110 *= norm0.w;\n  vec4 norm1 = taylorInvSqrt(vec4(dot(g001, g001), dot(g011, g011), dot(g101, g101), dot(g111, g111)));\n  g001 *= norm1.x;\n  g011 *= norm1.y;\n  g101 *= norm1.z;\n  g111 *= norm1.w;\n\n  float n000 = dot(g000, Pf0);\n  float n100 = dot(g100, vec3(Pf1.x, Pf0.yz));\n  float n010 = dot(g010, vec3(Pf0.x, Pf1.y, Pf0.z));\n  float n110 = dot(g110, vec3(Pf1.xy, Pf0.z));\n  float n001 = dot(g001, vec3(Pf0.xy, Pf1.z));\n  float n101 = dot(g101, vec3(Pf1.x, Pf0.y, Pf1.z));\n  float n011 = dot(g011, vec3(Pf0.x, Pf1.yz));\n  float n111 = dot(g111, Pf1);\n\n  vec3 fade_xyz = fade(Pf0);\n  vec4 n_z = mix(vec4(n000, n100, n010, n110), vec4(n001, n101, n011, n111), fade_xyz.z);\n  vec2 n_yz = mix(n_z.xy, n_z.zw, fade_xyz.y);\n  float n_xyz = mix(n_yz.x, n_yz.y, fade_xyz.x);\n  return 2.2 * n_xyz;\n}\n\n    float octaveNoise(vec2 p) {\n      float scale = 1.0;\n      float mag = 1.0;\n      float sum = 0.0;\n      float total = 0.0;\n      for (int i = 0; i < 9; i++) {\n        sum += mag * cnoise(vec3(scale * p, 0));\n        total += mag;\n        mag *= 0.5;\n        scale *= 2.0;\n        p += 2.0;\n      }\n      return pow(1.0 - sum / total, 4.0);\n    }\n\n    void main() {\n      float n = octaveNoise(vPos * 3.0 + offset * 1000.0);\n      float t = 0.0;\n      gl_FragColor = vec4(n, t, n, 0);\n    }",""]),
   attributes: {
-    position: [
-      -1, -1,
-       1, -1,
-       1,  1,
-      -1, -1,
-       1,  1,
-      -1,  1
-    ],
+    position: [-1, -1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1]
   },
   uniforms: {
-    offset: [2 * Math.random() - 1, 2 * Math.random() - 1],
+    offset: [2 * Math.random() - 1, 2 * Math.random() - 1]
   },
-  viewport: {x: 0, y: 0, width: canvas.width, height: canvas.height},
+  viewport: { x: 0, y: 0, width: canvas.width, height: canvas.height },
   framebuffer: pingPong[0],
-  count: 6,
+  count: 6
 })();
-
-
 
 const cmdBurn = regl({
   vert: `
@@ -70,25 +61,21 @@ const cmdBurn = regl({
       gl_Position = vec4(position, 0, 1);
     }`,
 
-  frag: glsl(["\n    precision highp float;\n#define GLSLIFY 1\n\n    uniform sampler2D source;\n    uniform vec2 resolution;\n    uniform vec2 spark;\n\n    vec2 dr = 1.0/resolution;\n    const float burnTemp = 506.0;\n    const float maxTemp = 1089.0;\n\n    void main() {\n      vec2 xy = gl_FragCoord.xy * dr;\n      vec4 m0 = texture2D(source, xy + dr * vec2(0, 0));\n\n      const int d = 3;\n\n      float tn = 0.0;\n      for (int x = -d; x <=d; x++) {\n        for (int y = -d; y <= d; y++) {\n          if (x == 0 && y == 0) continue;\n          float txy = texture2D(source, xy + dr * vec2(x, y)).y;\n          txy *= step(burnTemp, txy);\n          tn += txy * exp(-1.0 * length(vec2(x, y)));\n        }\n      }\n\n      // Current temperature\n      float t = m0.y;\n\n      // Add temperature from mouse\n      if (spark.x >= 0.0) {\n        float d = distance(gl_FragCoord.xy, spark*resolution);\n        t += pow(m0.z, 0.25) * 64.0*exp(-0.04 * d);\n      }\n\n      // Add temperature from neighboring pixels\n      t += 0.02 * m0.z * tn;\n\n      // Current fuel\n      float n = m0.x;\n\n      // Combust if temperature is high enough.\n      if (t > burnTemp) {\n        t = min(t * 1.001, maxTemp) * n/m0.z;\n        n *= 0.9899;\n      }\n\n      // Shut it down when out of fuel.\n      if (n < 0.001) {\n        t = 0.0;\n        n = 0.0;\n      }\n\n      gl_FragColor = vec4(n, t, m0.z, 1);\n    }",""]),
+  frag: glsl(["\n    precision highp float;\n#define GLSLIFY 1\n\n    uniform sampler2D source;\n    uniform vec2 resolution;\n    uniform vec2 spark;\n    uniform vec2 spark1;\n    uniform vec2 spark2;\n    uniform vec2 spark3;\n\n    vec2 dr = 1.0/resolution;\n    const float burnTemp = 506.0;\n    const float maxTemp = 1089.0;\n\n    void main() {\n      vec2 xy = gl_FragCoord.xy * dr;\n      vec4 m0 = texture2D(source, xy + dr * vec2(0, 0));\n\n      const int d = 3;\n\n      float tn = 0.0;\n      for (int x = -d; x <=d; x++) {\n        for (int y = -d; y <= d; y++) {\n          if (x == 0 && y == 0) continue;\n          float txy = texture2D(source, xy + dr * vec2(x, y)).y;\n          txy *= step(burnTemp, txy);\n          tn += txy * exp(-1.0 * length(vec2(x, y)));\n        }\n      }\n\n      // Current temperature\n      float t = m0.y;\n\n      // Add temperature from mouse\n      if (spark.x >= 0.0) {\n        float d = distance(gl_FragCoord.xy, spark*resolution);\n        t += pow(m0.z, 0.25) * 64.0*exp(-0.04 * d);\n      }\n      if (spark1.x >= 0.0) {\n        float d = distance(gl_FragCoord.xy, spark1*resolution);\n        t += pow(m0.z, 0.25) * 64.0*exp(-0.04 * d);\n      }\n      if (spark2.x >= 0.0) {\n        float d = distance(gl_FragCoord.xy, spark2*resolution);\n        t += pow(m0.z, 0.25) * 64.0*exp(-0.04 * d);\n      }\n      if (spark3.x >= 0.0) {\n        float d = distance(gl_FragCoord.xy, spark3*resolution);\n        t += pow(m0.z, 0.25) * 64.0*exp(-0.04 * d);\n      }\n\n      // Add temperature from neighboring pixels\n      t += 0.9 * m0.z * tn;\n\n      // Current fuel\n      float n = m0.x;\n\n      // Combust if temperature is high enough.\n      if (t > burnTemp) {\n        t = min(t * 1.001, maxTemp) * n/m0.z;\n        n *= 0.9899;\n      }\n\n      // Shut it down when out of fuel.\n      if (n < 0.001) {\n        t = 0.0;\n        n = 0.0001;\n      }\n\n      gl_FragColor = vec4(n, t, m0.z, 1);\n    }",""]),
   attributes: {
-    position: [
-      -1, -1,
-       1, -1,
-       1,  1,
-      -1, -1,
-       1,  1,
-      -1,  1
-    ],
+    position: [-1, -1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1]
   },
   uniforms: {
     resolution: regl.prop('resolution'),
     source: regl.prop('source'),
     spark: regl.prop('spark'),
+    spark1: regl.prop('spark1'),
+    spark2: regl.prop('spark2'),
+    spark3: regl.prop('spark3')
   },
   framebuffer: regl.prop('destination'),
   viewport: regl.prop('viewport'),
-  count: 6,
+  count: 6
 });
 
 // Render the current state.
@@ -100,62 +87,69 @@ const cmdFlame = regl({
       gl_Position = vec4(position, 0, 1);
     }`,
 
-  frag: glsl(["\n    precision highp float;\n#define GLSLIFY 1\n\n    uniform sampler2D source;\n    uniform vec2 resolution;\n\n    const float burnTemp = 506.0;\n    float brownTemp = 0.6 * burnTemp;\n    const float maxTemp = 1089.0;\n    const float redTemp = 0.5 * (burnTemp + maxTemp);\n\n    const vec3 white = vec3(1,1,1);\n    const vec3 brown = 0.5 * vec3(0.8235294117647058, 0.4117647058823529, 0.11764705882352941);\n    const vec3 black = vec3(0,0,0);\n    const vec3 red = vec3(3,0.9,0);\n\n    float stretch(float r, float a, float b) {\n      return (r - a) / (b - a);\n    }\n\n    void main() {\n      vec4 m0 = texture2D(source, gl_FragCoord.xy / resolution);\n      float t = m0.y;\n      float n = m0.x;\n      vec4 c = vec4(0);\n      if (n == m0.z) {\n        if (t < brownTemp) {\n          c = mix(vec4(white * 0.8, 1), vec4(brown, 1), stretch(t, 0.0, brownTemp));\n        } else if (t < burnTemp) {\n          c = mix(vec4(brown, 1), vec4(black, 1), stretch(t, brownTemp, burnTemp));\n        }\n      } else {\n        if (t < burnTemp) {\n          c = vec4(black, 1);\n        } else if (t >= burnTemp && t < redTemp) {\n          c = mix(vec4(black, 1), vec4(red, 1), stretch(t, burnTemp, redTemp));\n        } else if (t >= redTemp) {\n          c = mix(vec4(red,1), vec4(white,1), stretch(t, redTemp, maxTemp));\n        }\n      }\n      gl_FragColor = c;\n    }",""]),
+  frag: glsl(["\n    precision highp float;\n#define GLSLIFY 1\n\n    uniform sampler2D source;\n    uniform vec2 resolution;\n\n    const float burnTemp = 506.0;\n    float brownTemp = 0.6 * burnTemp;\n    const float maxTemp = 1089.0;\n    const float redTemp = 0.5 * (burnTemp + maxTemp);\n\n    const vec3 white = vec3(1,1,1);\n    const vec3 brown = 0.5 * vec3(0.8235294117647058, 0.4117647058823529, 0.11764705882352941);\n    const vec3 black = vec3(0,0,0);\n    const vec3 red = vec3(3,0.9,0);\n\n    float stretch(float r, float a, float b) {\n      return (r - a) / (b - a);\n    }\n\n    void main() {\n      vec4 m0 = texture2D(source, gl_FragCoord.xy / resolution);\n      float t = m0.y;\n      float n = m0.x;\n      vec4 c = vec4(0);\n      if (n == m0.z) {\n        if (t < brownTemp) {\n          c = mix(vec4(white, 1), vec4(brown, 1), stretch(t, 0.0, brownTemp));\n        } else if (t < burnTemp) {\n          c = mix(vec4(brown, 1), vec4(black, 0), stretch(t, brownTemp, burnTemp));\n        }\n      } else {\n        if (t < burnTemp) {\n          c = vec4(black, 0);\n        } else if (t >= burnTemp && t < redTemp) {\n          c = mix(vec4(black, 0), vec4(red, 1), stretch(t, burnTemp, redTemp));\n        } else if (t >= redTemp) {\n          c = mix(vec4(red,1), vec4(white,1), stretch(t, redTemp, maxTemp));\n        }\n      }\n      gl_FragColor = c;\n    }",""]),
   attributes: {
-    position: [
-      -1, -1,
-       1, -1,
-       1,  1,
-      -1, -1,
-       1,  1,
-      -1,  1
-    ],
+    position: [-1, -1, 1, -1, 1, 1, -1, -1, 1, 1, -1, 1]
   },
   uniforms: {
     resolution: regl.prop('resolution'),
-    source: regl.prop('source'),
+    source: regl.prop('source')
   },
   viewport: regl.prop('viewport'),
-  count: 6,
+  count: 6
 });
 
 const mouse = {
   down: false,
   x: 0,
-  y: 0,
-}
+  y: 0
+};
 
 window.addEventListener('mousedown', function(e) {
   mouse.down = true;
-  mouse.x = e.clientX / window.innerWidth;
-  mouse.y = (window.innerHeight - e.clientY) / window.innerHeight;
 });
 
-window.addEventListener('mouseup', function(e) {
-  mouse.down = false;
+window.addEventListener('touchstart', function(e) {
+  mouse.down = true;
 });
-
-window.addEventListener('mousemove', function(e) {
-  mouse.x = e.clientX / window.innerWidth;
-  mouse.y = (window.innerHeight - e.clientY) / window.innerHeight;
-})
 
 let pingPongIndex = 0;
 
-function loop() {
+const points = [];
 
+points.push({
+  x: Math.random(),
+  y: Math.random()
+});
+points.push({
+  x: Math.random(),
+  y: Math.random()
+});
+points.push({
+  x: Math.random(),
+  y: Math.random()
+});
+points.push({
+  x: Math.random(),
+  y: Math.random()
+});
+
+function loop() {
   for (let i = 0; i < 1; i++) {
     regl.clear({
       depth: 1,
-      framebuffer: pingPong[1 - pingPongIndex],
+      framebuffer: pingPong[1 - pingPongIndex]
     });
-
+  
     cmdBurn({
       source: pingPong[pingPongIndex],
       destination: pingPong[1 - pingPongIndex],
-      spark: mouse.down ? [mouse.x, mouse.y] : [-10000, -10000],
+      spark: mouse.down ? [points[0].x, points[0].y] : [-10000, -10000],
+      spark1: mouse.down ? [points[1].x, points[1].y] : [-10000, -10000],
+      spark2: mouse.down ? [points[2].x, points[2].y] : [-10000, -10000],
+      spark3: mouse.down ? [points[3].x, points[3].y] : [-10000, -10000],
       resolution: [canvas.width, canvas.height],
-      viewport: {x: 0, y: 0, width: canvas.width, height: canvas.height},
+      viewport: { x: 0, y: 0, width: canvas.width, height: canvas.height }
     });
 
     pingPongIndex = 1 - pingPongIndex;
@@ -164,9 +158,8 @@ function loop() {
   cmdFlame({
     source: pingPong[pingPongIndex],
     resolution: [canvas.width, canvas.height],
-    viewport: {x: 0, y: 0, width: canvas.width, height: canvas.height},
+    viewport: { x: 0, y: 0, width: canvas.width, height: canvas.height }
   });
-
 
   requestAnimationFrame(loop);
 }
