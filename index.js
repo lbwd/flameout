@@ -137,7 +137,7 @@ const cmdBurn = regl({
       }
 
       // Add temperature from neighboring pixels
-      t += 0.9 * m0.z * tn;
+      t += 0.99 * m0.z * tn;
 
       // Current fuel
       float n = m0.x;
@@ -145,13 +145,13 @@ const cmdBurn = regl({
       // Combust if temperature is high enough.
       if (t > burnTemp) {
         t = min(t * 1.001, maxTemp) * n/m0.z;
-        n *= 0.9899;
+        n *= 0.989;
       }
 
       // Shut it down when out of fuel.
       if (n < 0.001) {
         t = 0.0;
-        n = 0.0001;
+        n = 0.001;
       }
 
       gl_FragColor = vec4(n, t, m0.z, 1);
@@ -215,7 +215,7 @@ const cmdFlame = regl({
         if (t < burnTemp) {
           c = vec4(black, 0);
         } else if (t >= burnTemp && t < redTemp) {
-          c = mix(vec4(black, 0), vec4(red, 1), stretch(t, burnTemp, redTemp));
+          c = mix(vec4(black, 1), vec4(red, 1), stretch(t, burnTemp, redTemp));
         } else if (t >= redTemp) {
           c = mix(vec4(red,1), vec4(white,1), stretch(t, redTemp, maxTemp));
         }
@@ -241,10 +241,26 @@ const mouse = {
 
 window.addEventListener('mousedown', function(e) {
   mouse.down = true;
+
+  this.setTimeout(() => {
+    mouse.down = false;
+  }, 2000);
+
+  this.setTimeout(() => {
+    canvas.classList.add("hidden");
+  }, 6000);
 });
 
 window.addEventListener('touchstart', function(e) {
   mouse.down = true;
+
+  this.setTimeout(() => {
+    mouse.down = false;
+  }, 2000);
+
+  this.setTimeout(() => {
+    canvas.classList.add("hidden");
+  }, 6000);
 });
 
 let pingPongIndex = 0;
@@ -274,7 +290,7 @@ function loop() {
       depth: 1,
       framebuffer: pingPong[1 - pingPongIndex]
     });
-  
+
     cmdBurn({
       source: pingPong[pingPongIndex],
       destination: pingPong[1 - pingPongIndex],
