@@ -56,7 +56,7 @@ regl({
         sum += mag * noise(vec3(scale * p, 0));
         total += mag;
         mag *= 0.5;
-        scale *= 2.0;
+        scale *= 3.0;
         p += 2.0;
       }
       return pow(1.0 - sum / total, 4.0);
@@ -121,23 +121,23 @@ const cmdBurn = regl({
       // Add temperature from mouse
       if (spark.x >= 0.0) {
         float d = distance(gl_FragCoord.xy, spark*resolution);
-        t += pow(m0.z, 0.25) * 64.0*exp(-0.04 * d);
+        t += pow(m0.z, 2.0) * 64.0*exp(-0.009 * d);
       }
       if (spark1.x >= 0.0) {
         float d = distance(gl_FragCoord.xy, spark1*resolution);
-        t += pow(m0.z, 0.25) * 64.0*exp(-0.04 * d);
+        t += pow(m0.z, 2.0) * 64.0*exp(-0.009 * d);
       }
       if (spark2.x >= 0.0) {
         float d = distance(gl_FragCoord.xy, spark2*resolution);
-        t += pow(m0.z, 0.25) * 64.0*exp(-0.04 * d);
+        t += pow(m0.z, 2.0) * 64.0*exp(-0.009 * d);
       }
       if (spark3.x >= 0.0) {
         float d = distance(gl_FragCoord.xy, spark3*resolution);
-        t += pow(m0.z, 0.25) * 64.0*exp(-0.04 * d);
+        t += pow(m0.z, 2.0) * 64.0*exp(-0.009 * d);
       }
 
       // Add temperature from neighboring pixels
-      t += 0.99 * m0.z * tn;
+      t += 3.0 * m0.z * tn;
 
       // Current fuel
       float n = m0.x;
@@ -145,13 +145,7 @@ const cmdBurn = regl({
       // Combust if temperature is high enough.
       if (t > burnTemp) {
         t = min(t * 1.001, maxTemp) * n/m0.z;
-        n *= 0.989;
-      }
-
-      // Shut it down when out of fuel.
-      if (n < 0.001) {
-        t = 0.0;
-        n = 0.001;
+        n *= 0.985;
       }
 
       gl_FragColor = vec4(n, t, m0.z, 1);
@@ -193,6 +187,7 @@ const cmdFlame = regl({
 
     const vec3 white = vec3(1,1,1);
     const vec3 brown = 0.5 * vec3(0.8235294117647058, 0.4117647058823529, 0.11764705882352941);
+    //const vec3 brown = white;
     const vec3 black = vec3(0,0,0);
     const vec3 red = vec3(3,0.9,0);
 
