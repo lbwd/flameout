@@ -2,10 +2,10 @@
   "name": "flameout",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "js/index.js",
   "scripts": {
-    "start": "budo index.js:bundle.js --live -- -t glslify",
-    "build": "browserify index.js -t glslify -o bundle.js"
+    "start": "budo js/index.js:bundle.js --live -- -t glslify",
+    "build": "browserify js/index.js -t glslify -o bundle.js"
   },
   "keywords": [],
   "author": "",
