@@ -107,26 +107,20 @@ const mouse = {
 
 window.addEventListener('mousedown', function(e) {
   mouse.down = true;
+  canvas.classList.add('hidden');
 
   this.setTimeout(() => {
     mouse.down = false;
   }, 2000);
-
-  this.setTimeout(() => {
-    canvas.classList.add("hidden");
-  }, 6000);
 });
 
 window.addEventListener('touchstart', function(e) {
   mouse.down = true;
+  canvas.classList.add('hidden');
 
   this.setTimeout(() => {
     mouse.down = false;
   }, 2000);
-
-  this.setTimeout(() => {
-    canvas.classList.add("hidden");
-  }, 6000);
 });
 
 let pingPongIndex = 0;
